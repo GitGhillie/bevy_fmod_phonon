@@ -1,1 +1,11 @@
 /target
+assets/
+demo_project/
+.idea/
+
+*.lib
+*.dll
+*.so
+*.so.*
+
+Cargo.lock
