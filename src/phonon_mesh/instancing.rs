@@ -1,3 +1,5 @@
+use crate::phonon_mesh::material::PhononMaterial;
+use crate::phonon_mesh::mesh;
 use crate::phonon_mesh::mesh::AudioMesh;
 use crate::phonon_plugin::SteamSimulation;
 use bevy::asset::{Assets, Handle};
@@ -23,14 +25,16 @@ impl<'w> MeshParam<'w> {
     pub(crate) fn create_instanced_mesh(
         &mut self,
         mesh_handle: &Handle<Mesh>,
+        material: &PhononMaterial,
     ) -> Option<InstancedMesh> {
-        create_instanced_mesh_internal(self, mesh_handle)
+        create_instanced_mesh_internal(self, mesh_handle, material)
     }
 }
 
 fn create_instanced_mesh_internal(
     mesh_param: &mut MeshParam,
     mesh_handle: &Handle<Mesh>,
+    material: &PhononMaterial,
 ) -> Option<InstancedMesh> {
     let static_meshes = &mut mesh_param.static_meshes;
     let meshes = &mesh_param.bevy_meshes;
@@ -50,7 +54,7 @@ fn create_instanced_mesh_internal(
     } else {
         // Create audio geometry
         if let Some(mesh) = meshes.get(&*mesh_handle) {
-            let audio_mesh: AudioMesh = mesh.try_into().unwrap();
+            let audio_mesh: AudioMesh = mesh::try_from(mesh, material).unwrap();
 
             // Create sub scene with static mesh, this will later be used to create the instanced mesh
             let sub_scene = simulator.context.create_scene().unwrap();

@@ -10,7 +10,6 @@ use bevy::time::common_conditions::on_timer;
 use bevy::window::PresentMode;
 use bevy_fmod::prelude::AudioSource;
 use bevy_fmod::prelude::*;
-use bevy_fmod_phonon::prelude::Material;
 use bevy_fmod_phonon::prelude::*;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
@@ -52,7 +51,7 @@ fn main() {
         .add_plugins(PerfUiPlugin)
         .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
-        .add_systems(Update, move_object)
+        //.add_systems(Update, move_object)
         // .add_systems(
         //     Update,
         //     remove_source.run_if(on_timer(Duration::from_secs(3))),
@@ -73,7 +72,7 @@ fn setup_scene(
     let material = materials.add(Color::rgb(0.8, 0.7, 0.6));
 
     //28 -> 22k
-    let cube_num = 3;
+    let cube_num = 1;
 
     for x in 0..cube_num {
         for y in 0..cube_num {
@@ -92,6 +91,22 @@ fn setup_scene(
             }
         }
     }
+
+    commands.spawn((
+        PbrBundle {
+            mesh: meshes.add(Sphere::new(0.3)),
+            material: material.clone(),
+            transform: Transform::from_rotation(Quat::from_rotation_x(PI * 0.5))
+                .with_translation(Vec3::new(1.0, 0.0, 0.0)),
+            ..default()
+        },
+        NeedsAudioMesh(PhononMaterial {
+            absorption: [0.0, 0.0, 0.0],
+            scattering: 0.05,
+            transmission: [0.5, 0.2, 0.1],
+        }),
+        TorusMarker,
+    ));
 
     // Light
     commands.spawn(PointLightBundle {
