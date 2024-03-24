@@ -1,4 +1,5 @@
 use crate::phonon_mesh;
+use crate::phonon_mesh::StaticMeshes;
 use bevy::prelude::*;
 use bevy_fmod::prelude::AudioListener;
 use bevy_fmod::prelude::AudioSource;
@@ -61,6 +62,7 @@ impl Plugin for PhononPlugin {
             hrtf,
             scene, //todo remove option(?)
         })
+        .insert_resource(StaticMeshes::default())
         .add_systems(
             Update,
             (
@@ -93,10 +95,7 @@ fn update_steam_audio_listener(
     //sim_res.simulator.set_reflections(4096, 16, 2.0, 1, 1.0);
 }
 
-fn update_steam_audio_source(
-    sim_res: ResMut<SteamSimulation>,
-    mut source_query: Query<(&GlobalTransform, &mut PhononSource)>,
-) {
+fn update_steam_audio_source(mut source_query: Query<(&GlobalTransform, &mut PhononSource)>) {
     for (source_transform, mut phonon_source) in source_query.iter_mut() {
         let (_rotation, rotation, translation) = source_transform.to_scale_rotation_translation();
 

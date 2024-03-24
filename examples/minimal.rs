@@ -53,10 +53,10 @@ fn main() {
         .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
         .add_systems(Update, move_object)
-        .add_systems(
-            Update,
-            remove_source.run_if(on_timer(Duration::from_secs(5))),
-        )
+        // .add_systems(
+        //     Update,
+        //     remove_source.run_if(on_timer(Duration::from_secs(5))),
+        // )
         .run();
 }
 
@@ -73,7 +73,7 @@ fn setup_scene(
     let material = materials.add(Color::rgb(0.8, 0.7, 0.6));
 
     //28 -> 22k
-    let cube_num = 3;
+    let cube_num = 28;
 
     for x in 0..cube_num {
         for y in 0..cube_num {

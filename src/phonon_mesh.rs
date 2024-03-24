@@ -1,4 +1,5 @@
 use crate::phonon_plugin::SteamSimulation;
+use bevy::ecs::system::SystemParam;
 use bevy::{
     prelude::*,
     render::{
@@ -6,6 +7,7 @@ use bevy::{
         render_resource::PrimitiveTopology,
     },
 };
+use std::collections::HashMap;
 use steamaudio::scene::InstancedMesh;
 
 #[derive(Component)]
@@ -14,14 +16,63 @@ pub struct NeedsAudioMesh;
 #[derive(Component)]
 pub(crate) struct PhononMesh(InstancedMesh);
 
+#[derive(Resource, Default, Deref, DerefMut)]
+pub(crate) struct StaticMeshes(HashMap<Handle<Mesh>, steamaudio::scene::Scene>);
+
+#[derive(SystemParam)]
+pub(crate) struct MeshParam<'w> {
+    bevy_meshes: ResMut<'w, Assets<Mesh>>,
+    static_meshes: ResMut<'w, StaticMeshes>,
+    simulator: ResMut<'w, SteamSimulation>,
+}
+
 pub(crate) fn register_audio_meshes(
     mut commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    mut object_query: Query<(Entity, &mut Handle<Mesh>), With<NeedsAudioMesh>>,
-    simulator: ResMut<SteamSimulation>,
+    mut mesh_param: MeshParam,
+    mut object_query: Query<(Entity, &Handle<Mesh>), With<NeedsAudioMesh>>,
 ) {
     for (ent, mesh_handle) in &mut object_query {
-        // Create some audio geometry
+        // if handle exists in static_meshes -> use that mesh to create instanced mesh
+        // otherwise create a new one and add it to instanced_meshes
+
+        let mut instanced_mesh = mesh_param.create_instanced_mesh(mesh_handle).unwrap();
+        instanced_mesh.set_visible(true);
+
+        let scene_root = &mesh_param.simulator.scene;
+        scene_root.commit();
+
+        commands.entity(ent).insert(PhononMesh(instanced_mesh));
+        commands.entity(ent).remove::<NeedsAudioMesh>();
+    }
+}
+
+impl<'w> MeshParam<'w> {
+    fn create_instanced_mesh(&mut self, mesh_handle: &Handle<Mesh>) -> Option<InstancedMesh> {
+        create_instanced_mesh_internal(self, mesh_handle)
+    }
+}
+
+fn create_instanced_mesh_internal(
+    mesh_param: &mut MeshParam,
+    mesh_handle: &Handle<Mesh>,
+) -> Option<InstancedMesh> {
+    let static_meshes = &mut mesh_param.static_meshes;
+    let meshes = &mesh_param.bevy_meshes;
+    let simulator = &mesh_param.simulator;
+    let scene_root = &simulator.scene;
+
+    if let Some(static_mesh_scene) = static_meshes.get(&mesh_handle) {
+        // Turn that mesh into an instanced one, so it can be moved around.
+        // todo: Differentiate between set-and-forget and movable audio meshes.
+        // Currently compute_matrix will be called every frame for every mesh.
+
+        let instanced_mesh = scene_root
+            .create_instanced_mesh(static_mesh_scene, Transform::default().compute_matrix())
+            .unwrap();
+
+        Some(instanced_mesh)
+    } else {
+        // Create audio geometry
         if let Some(mesh) = meshes.get(&*mesh_handle) {
             let audio_mesh: AudioMesh = mesh.try_into().unwrap();
 
@@ -40,19 +91,18 @@ pub(crate) fn register_audio_meshes(
             static_mesh.set_visible(true);
             sub_scene.commit();
 
-            let scene_root = &simulator.scene;
+            static_meshes.insert(mesh_handle.clone(), sub_scene.clone());
+
             // Turn that mesh into an instanced one, so it can be moved around.
             // todo: Differentiate between set-and-forget and movable audio meshes.
             // Currently compute_matrix will be called every frame for every mesh.
-            let some_transform = Transform::default();
-            let mut instanced_mesh = scene_root
-                .create_instanced_mesh(&sub_scene, some_transform.compute_matrix())
+            let instanced_mesh = scene_root
+                .create_instanced_mesh(&sub_scene, Transform::default().compute_matrix())
                 .unwrap();
-            instanced_mesh.set_visible(true);
-            scene_root.commit();
 
-            commands.entity(ent).insert(PhononMesh(instanced_mesh));
-            commands.entity(ent).remove::<NeedsAudioMesh>();
+            Some(instanced_mesh)
+        } else {
+            None // todo: Improve this mess. There is also a bit of duplicated code above
         }
     }
 }
