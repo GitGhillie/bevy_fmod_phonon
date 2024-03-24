@@ -24,7 +24,7 @@ pub struct SteamSimulation {
     pub context: Context,
     pub hrtf: Hrtf,
     pub simulator: Simulator,
-    pub scene: Option<steamaudio::scene::Scene>,
+    pub scene: steamaudio::scene::Scene,
 }
 
 pub struct PhononPlugin;
@@ -59,7 +59,7 @@ impl Plugin for PhononPlugin {
             simulator,
             context,
             hrtf,
-            scene: Some(scene), //todo remove option(?)
+            scene, //todo remove option(?)
         })
         .add_systems(
             Update,

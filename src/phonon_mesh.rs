@@ -40,20 +40,19 @@ pub(crate) fn register_audio_meshes(
             static_mesh.set_visible(true);
             sub_scene.commit();
 
-            if let Some(scene_root) = &simulator.scene {
-                // Turn that mesh into an instanced one, so it can be moved around.
-                // todo: Differentiate between set-and-forget and movable audio meshes.
-                // Currently compute_matrix will be called every frame for every mesh.
-                let some_transform = Transform::default();
-                let mut instanced_mesh = scene_root
-                    .create_instanced_mesh(&sub_scene, some_transform.compute_matrix())
-                    .unwrap();
-                instanced_mesh.set_visible(true);
-                scene_root.commit();
+            let scene_root = &simulator.scene;
+            // Turn that mesh into an instanced one, so it can be moved around.
+            // todo: Differentiate between set-and-forget and movable audio meshes.
+            // Currently compute_matrix will be called every frame for every mesh.
+            let some_transform = Transform::default();
+            let mut instanced_mesh = scene_root
+                .create_instanced_mesh(&sub_scene, some_transform.compute_matrix())
+                .unwrap();
+            instanced_mesh.set_visible(true);
+            scene_root.commit();
 
-                commands.entity(ent).insert(PhononMesh(instanced_mesh));
-                commands.entity(ent).remove::<NeedsAudioMesh>();
-            }
+            commands.entity(ent).insert(PhononMesh(instanced_mesh));
+            commands.entity(ent).remove::<NeedsAudioMesh>();
         }
     }
 }
