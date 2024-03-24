@@ -38,29 +38,26 @@ impl Plugin for PhononPlugin {
 
         let hrtf = context.create_hrtf(sampling_rate, frame_size).unwrap();
 
+        // This is the main scene to which all the geometry will be added later
+        let scene = context.create_scene().unwrap();
+        scene.commit();
+
         // todo! simulationsettings !!!!!!!!!!!!!!!!!!!!!!!
         // simulation_settings.max_num_occlusion_samples = 10; // This only sets the max, the actual amount is set per source
         let mut simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
-
-        let scene = context.create_scene().unwrap();
-
-        scene.commit();
-
         simulator.set_scene(&scene);
-        simulator.commit(); //todo remove?
 
-        // todo: must be initialized before creating any steam audio DSP effects. So it might be possible to do it somewhere else if that helps code organization
         fmod::init_fmod(&context);
         fmod::fmod_set_hrtf(&hrtf);
-        //todo get rid of hardcoded value
-        let settings = fmod::fmod_create_settings(48000, 1024);
+
+        let settings = fmod::fmod_create_settings(sampling_rate, frame_size);
         fmod::fmod_set_simulation_settings(settings);
 
         app.insert_resource(SteamSimulation {
             simulator,
             context,
             hrtf,
-            scene, //todo remove option(?)
+            scene,
         })
         .insert_resource(StaticMeshes::default())
         .add_systems(
@@ -69,7 +66,7 @@ impl Plugin for PhononPlugin {
                 (
                     register_phonon_sources,
                     phonon_mesh::register_audio_meshes,
-                    phonon_mesh::move_audio_meshes,
+                    phonon_mesh::update_audio_mesh_transforms,
                     update_steam_audio_listener,
                     update_steam_audio_source,
                 ),

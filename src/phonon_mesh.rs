@@ -19,6 +19,7 @@ pub(crate) struct PhononMesh(InstancedMesh);
 #[derive(Resource, Default, Deref, DerefMut)]
 pub(crate) struct StaticMeshes(HashMap<Handle<Mesh>, steamaudio::scene::Scene>);
 
+/// Some information necessary to convert Bevy meshes to Steam Audio meshes
 #[derive(SystemParam)]
 pub(crate) struct MeshParam<'w> {
     bevy_meshes: ResMut<'w, Assets<Mesh>>,
@@ -26,15 +27,14 @@ pub(crate) struct MeshParam<'w> {
     simulator: ResMut<'w, SteamSimulation>,
 }
 
+/// If an entity with a `NeedsAudioMesh` marker and a Bevy mesh exist, it will attempt to convert
+/// the mesh to a Steam Audio mesh and add it to the audio world.
 pub(crate) fn register_audio_meshes(
     mut commands: Commands,
     mut mesh_param: MeshParam,
     mut object_query: Query<(Entity, &Handle<Mesh>), With<NeedsAudioMesh>>,
 ) {
     for (ent, mesh_handle) in &mut object_query {
-        // if handle exists in static_meshes -> use that mesh to create instanced mesh
-        // otherwise create a new one and add it to instanced_meshes
-
         let mut instanced_mesh = mesh_param.create_instanced_mesh(mesh_handle).unwrap();
         instanced_mesh.set_visible(true);
 
@@ -47,6 +47,8 @@ pub(crate) fn register_audio_meshes(
 }
 
 impl<'w> MeshParam<'w> {
+    /// Creates a Steam Audio Instanced Mesh from a Bevy Mesh.
+    /// If the Bevy mesh has been converted before it will re-use the Steam Audio mesh.
     fn create_instanced_mesh(&mut self, mesh_handle: &Handle<Mesh>) -> Option<InstancedMesh> {
         create_instanced_mesh_internal(self, mesh_handle)
     }
@@ -107,7 +109,7 @@ fn create_instanced_mesh_internal(
     }
 }
 
-pub(crate) fn move_audio_meshes(
+pub(crate) fn update_audio_mesh_transforms(
     mut object_query: Query<(&GlobalTransform, &mut PhononMesh), Changed<GlobalTransform>>,
 ) {
     for (transform, mut audio_instance) in &mut object_query {
