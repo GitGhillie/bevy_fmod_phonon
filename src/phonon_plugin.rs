@@ -3,7 +3,7 @@ use crate::phonon_mesh::StaticMeshes;
 use bevy::prelude::*;
 use bevy_fmod::prelude::AudioListener;
 use bevy_fmod::prelude::AudioSource;
-use libfmod::{Dsp, DspType, EventInstance};
+use libfmod::{Dsp, EventInstance};
 use steamaudio::context::Context;
 use steamaudio::fmod;
 use steamaudio::geometry::Orientation;
@@ -48,10 +48,10 @@ impl Plugin for PhononPlugin {
         simulator.set_scene(&scene);
 
         fmod::init_fmod(&context);
-        fmod::fmod_set_hrtf(&hrtf);
+        fmod::set_hrtf(&hrtf);
 
         let settings = fmod::fmod_create_settings(sampling_rate, frame_size);
-        fmod::fmod_set_simulation_settings(settings);
+        fmod::set_simulation_settings(settings);
 
         app.insert_resource(SteamSimulation {
             simulator,
@@ -115,6 +115,7 @@ fn update_steam_audio(sim_res: ResMut<SteamSimulation>) {
     // See function `register_phonon_sources`.
 }
 
+/// Currently all bevy_fmod audio sources will be converted to Steam Audio sources.
 fn register_phonon_sources(
     mut audio_sources: Query<(Entity, &AudioSource), Without<PhononSource>>,
     mut commands: Commands,
@@ -130,7 +131,7 @@ fn register_phonon_sources(
             source.set_transmission(3);
             //source.set_reflections();
 
-            let source_address = fmod::fmod_add_source(&source);
+            let source_address = fmod::add_source(&source);
             let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
 
             // By setting this field the Steam Audio FMOD plugin can retrieve the
@@ -147,18 +148,13 @@ fn register_phonon_sources(
     }
 }
 
-// // Deregister phonon source
+// Deregister phonon source
 // impl Drop for PhononSource {
 //     fn drop(&mut self) {
 //         println!("Dropping source!");
-//         //todo fmod remove source
+//         fmod::remove_source(self.address);
 //     }
 // }
-
-//todo delete PhononSource using the address and iplFMODRemoveSource
-
-// todo: The function below could potentially be simplified/improved with the help
-// of FMODGetPluginDescriptionList() or FMOD_SteamAudio_Spatialize_GetDSPDescription()
 
 /// The goal here is to find the Steam Audio Spatializer DSP associated with an instance.
 /// This way we can later set its parameters.
@@ -166,28 +162,17 @@ fn register_phonon_sources(
 pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
     if let Ok(channel_group) = instance.get_channel_group() {
         let num_groups = channel_group.get_num_groups().unwrap();
-        //println!("num Groups: {}", num_groups);
 
         for index_group in 0..num_groups {
             let group = channel_group.get_group(index_group).unwrap();
             let group_num_dsp = group.get_num_ds_ps().unwrap();
-            //println!("Group {} num DSPs: {}", index_group, group_num_dsp);
 
             for index_dsp in 0..group_num_dsp {
                 let dsp = group.get_dsp(index_dsp).unwrap();
-                let dsp_type = dsp.get_type().unwrap();
-                //println!("type: {:?}", dsp_type);
+                let dsp_info = dsp.get_info().unwrap();
 
-                // Plugin DSPs don't have a known type
-                if dsp_type == DspType::Unknown {
-                    let dsp_num_parameters = dsp.get_num_parameters().unwrap();
-                    //println!("num parameters: {:?}", dsp_num_parameters);
-
-                    // The Steam Audio Spatializer DSP has 34 parameters
-                    if dsp_num_parameters == 34 {
-                        // Now we know that it's most likely the Steam Audio Spatializer.
-                        return Some(dsp);
-                    }
+                if dsp_info.0 == "Steam Audio Spatializer" {
+                    return Some(dsp);
                 }
             }
         }
