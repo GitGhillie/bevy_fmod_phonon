@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use bevy_fmod::prelude::AudioSource;
 use bevy_fmod::prelude::*;
 use bevy_fmod_phonon::phonon_mesh::NeedsAudioMesh;
-use bevy_fmod_phonon::phonon_plugin::{PhononPlugin, SteamSimulation};
+use bevy_fmod_phonon::phonon_plugin::PhononPlugin;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
     LookTransformPlugin,
@@ -37,7 +37,7 @@ fn main() {
         ))
         .add_plugins(LookTransformPlugin)
         .add_plugins(FpsCameraPlugin::default())
-        .add_systems(Startup, (setup_scene, setup_steam_audio))
+        .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
         //.add_systems(Update, move_object)
         .add_plugins(ScreenDiagnosticsPlugin::default())
@@ -133,18 +133,6 @@ fn move_object(mut obj_query: Query<&mut Transform, With<TorusMarker>>, time: Re
     for mut transform in &mut obj_query {
         transform.translation.y += sin;
     }
-}
-
-// todo move out of example
-fn setup_steam_audio(mut sim_res: ResMut<SteamSimulation>) {
-    let scene = sim_res.context.create_scene().unwrap();
-
-    scene.commit();
-
-    sim_res.simulator.set_scene(&scene);
-    sim_res.simulator.commit(); //todo remove?
-
-    sim_res.scene = Some(scene);
 }
 
 fn play_music(mut audio_sources: Query<&AudioSource>) {

@@ -41,7 +41,14 @@ impl Plugin for PhononPlugin {
 
         // todo! simulationsettings !!!!!!!!!!!!!!!!!!!!!!!
         // simulation_settings.max_num_occlusion_samples = 10; // This only sets the max, the actual amount is set per source
-        let simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
+        let mut simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
+
+        let scene = context.create_scene().unwrap();
+
+        scene.commit();
+
+        simulator.set_scene(&scene);
+        simulator.commit(); //todo remove?
 
         // todo: must be initialized before creating any steam audio DSP effects. So it might be possible to do it somewhere else if that helps code organization
         fmod::init_fmod(&context);
@@ -54,7 +61,7 @@ impl Plugin for PhononPlugin {
             simulator,
             context,
             hrtf,
-            scene: None, //todo we can already init this one maybe?
+            scene: Some(scene), //todo remove option(?)
         })
         .add_systems(
             Update,
@@ -140,8 +147,7 @@ fn register_phonon_sources(
             source.set_distance_attenuation(DistanceAttenuationModel::Default);
             source.set_air_absorption(AirAbsorptionModel::Default);
             source.set_occlusion();
-            source.set_transmission(5); //todo: This breaks things when turned on in FMOD
-                                        // With user defined transmission set in FMOD it works fine
+            source.set_transmission(5);
 
             let source_address = steamaudio::fmod::fmod_add_source(&source); //todo make component
 
@@ -153,8 +159,6 @@ fn register_phonon_sources(
                 address: source_address,
                 source,
             });
-
-            println!("ADDED");
         }
     }
 }
