@@ -15,7 +15,7 @@ libfmod = "~2.206.2" # todo check if we can get rid of this dependency
 [dev-dependencies]
 bevy = { version = "0.13", default-features = true }
 smooth-bevy-cameras = "0.11" # todo remove
-bevy_screen_diagnostics = "0.5" # todo remove
+iyes_perf_ui = "0.2" # todo remove
 
 [[example]]
 name = "minimal"

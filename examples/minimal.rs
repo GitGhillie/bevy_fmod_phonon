@@ -6,6 +6,7 @@
 //! Use WASD, Space, Shift and the mouse to move around.
 
 use bevy::prelude::*;
+use bevy::window::PresentMode;
 use bevy_fmod::prelude::AudioSource;
 use bevy_fmod::prelude::*;
 use bevy_fmod_phonon::phonon_mesh::NeedsAudioMesh;
@@ -16,7 +17,7 @@ use smooth_bevy_cameras::{
 };
 use std::f32::consts::PI;
 
-use bevy_screen_diagnostics::{ScreenDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin};
+use iyes_perf_ui::prelude::*;
 
 #[derive(Component)]
 struct TorusMarker;
@@ -24,7 +25,13 @@ struct TorusMarker;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    present_mode: PresentMode::Immediate,
+                    ..default()
+                }),
+                ..default()
+            }),
             FmodPlugin {
                 audio_banks_paths: &[
                     "./assets/audio/demo_project/Build/Desktop/Master.bank",
@@ -37,11 +44,13 @@ fn main() {
         ))
         .add_plugins(LookTransformPlugin)
         .add_plugins(FpsCameraPlugin::default())
+        .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
+        .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
+        .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
+        .add_plugins(PerfUiPlugin)
         .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
         //.add_systems(Update, move_object)
-        .add_plugins(ScreenDiagnosticsPlugin::default())
-        .add_plugins(ScreenFrameDiagnosticsPlugin)
         .run();
 }
 
@@ -51,11 +60,14 @@ fn setup_scene(
     mut materials: ResMut<Assets<StandardMaterial>>,
     studio: Res<FmodStudio>,
 ) {
+    commands.spawn(PerfUiCompleteBundle::default());
+
     // Cubes
     let mesh = meshes.add(Cuboid::from_size(Vec3::splat(0.3)));
     let material = materials.add(Color::rgb(0.8, 0.7, 0.6));
 
-    let cube_num = 1;
+    //28 -> 22k
+    let cube_num = 2;
 
     for x in 0..cube_num {
         for y in 0..cube_num {

@@ -147,7 +147,7 @@ fn register_phonon_sources(
             source.set_distance_attenuation(DistanceAttenuationModel::Default);
             source.set_air_absorption(AirAbsorptionModel::Default);
             source.set_occlusion();
-            source.set_transmission(5);
+            source.set_transmission(3);
 
             let source_address = steamaudio::fmod::fmod_add_source(&source); //todo make component
 

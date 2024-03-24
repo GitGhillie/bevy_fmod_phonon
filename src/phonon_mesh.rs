@@ -58,7 +58,9 @@ pub(crate) fn register_audio_meshes(
     }
 }
 
-pub(crate) fn move_audio_meshes(mut object_query: Query<(&GlobalTransform, &mut PhononMesh)>) {
+pub(crate) fn move_audio_meshes(
+    mut object_query: Query<(&GlobalTransform, &mut PhononMesh), Changed<GlobalTransform>>,
+) {
     for (transform, mut audio_instance) in &mut object_query {
         let instanced_mesh = &mut audio_instance.0;
         instanced_mesh.set_transform(transform.compute_matrix());
