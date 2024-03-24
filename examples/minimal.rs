@@ -10,8 +10,8 @@ use bevy::time::common_conditions::on_timer;
 use bevy::window::PresentMode;
 use bevy_fmod::prelude::AudioSource;
 use bevy_fmod::prelude::*;
-use bevy_fmod_phonon::phonon_mesh::NeedsAudioMesh;
-use bevy_fmod_phonon::phonon_plugin::PhononPlugin;
+use bevy_fmod_phonon::prelude::Material;
+use bevy_fmod_phonon::prelude::*;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
     LookTransformPlugin,
@@ -86,7 +86,7 @@ fn setup_scene(
                             .with_translation(Vec3::new(x as f32, y as f32, z as f32)),
                         ..default()
                     },
-                    NeedsAudioMesh,
+                    NeedsAudioMesh(materials::BRICK),
                     TorusMarker,
                 ));
             }

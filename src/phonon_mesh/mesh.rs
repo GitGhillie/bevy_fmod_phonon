@@ -1,4 +1,4 @@
-use crate::phonon_mesh::material::{materials, Material};
+use crate::phonon_mesh::material::materials;
 use bevy::prelude::Mesh;
 use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 

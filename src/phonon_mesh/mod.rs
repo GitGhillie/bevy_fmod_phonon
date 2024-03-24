@@ -1,5 +1,5 @@
 pub(crate) mod instancing;
-mod material;
+pub(crate) mod material;
 mod mesh;
 
 use crate::phonon_mesh::instancing::MeshParam;
@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use steamaudio::scene::InstancedMesh;
 
 #[derive(Component)]
-pub struct NeedsAudioMesh;
+pub struct NeedsAudioMesh(pub material::Material);
 
 #[derive(Component)]
 pub(crate) struct PhononMesh(InstancedMesh);
