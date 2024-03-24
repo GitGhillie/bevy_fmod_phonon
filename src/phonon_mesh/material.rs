@@ -1,12 +1,33 @@
 // Mostly copied from https://github.com/Aceeri/steam-audio-rs/blob/master/steam-audio/src/simulation/material.rs
 
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 /// Acoustic properties of a surface.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PhononMaterial {
     /// Specified in 3 frequency bands of 400 Hz, 2.5KHz, and 15 KHz.
     pub absorption: [f32; 3],
     pub scattering: f32,
     pub transmission: [f32; 3],
+}
+
+impl Eq for PhononMaterial {}
+impl Hash for PhononMaterial {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let mut hasher = DefaultHasher::new();
+
+        for num in self.absorption {
+            num.to_bits().hash(&mut hasher);
+        }
+
+        self.scattering.to_bits().hash(&mut hasher);
+
+        for num in self.transmission {
+            num.to_bits().hash(&mut hasher);
+        }
+
+        hasher.finish().hash(state);
+    }
 }
 
 impl Into<steamaudio::scene::Material> for &PhononMaterial {

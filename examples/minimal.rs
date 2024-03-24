@@ -94,7 +94,7 @@ fn setup_scene(
 
     commands.spawn((
         PbrBundle {
-            mesh: meshes.add(Sphere::new(0.3)),
+            mesh: mesh.clone(),
             material: material.clone(),
             transform: Transform::from_rotation(Quat::from_rotation_x(PI * 0.5))
                 .with_translation(Vec3::new(1.0, 0.0, 0.0)),

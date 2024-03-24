@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use steamaudio::scene::InstancedMesh;
 
 #[derive(Resource, Default, Deref, DerefMut)]
-pub(crate) struct StaticMeshes(HashMap<Handle<Mesh>, steamaudio::scene::Scene>);
+pub(crate) struct StaticMeshes(HashMap<(Handle<Mesh>, PhononMaterial), steamaudio::scene::Scene>);
 
 /// Some information necessary to convert Bevy meshes to Steam Audio meshes
 #[derive(SystemParam)]
@@ -41,7 +41,7 @@ fn create_instanced_mesh_internal(
     let simulator = &mesh_param.simulator;
     let scene_root = &simulator.scene;
 
-    if let Some(static_mesh_scene) = static_meshes.get(&mesh_handle) {
+    if let Some(static_mesh_scene) = static_meshes.get(&(mesh_handle.clone(), material.clone())) {
         // Turn that mesh into an instanced one, so it can be moved around.
         // todo: Differentiate between set-and-forget and movable audio meshes.
         // Currently compute_matrix will be called every frame for every mesh.
@@ -71,7 +71,7 @@ fn create_instanced_mesh_internal(
             static_mesh.set_visible(true);
             sub_scene.commit();
 
-            static_meshes.insert(mesh_handle.clone(), sub_scene.clone());
+            static_meshes.insert((mesh_handle.clone(), material.clone()), sub_scene.clone());
 
             // Turn that mesh into an instanced one, so it can be moved around.
             // todo: Differentiate between set-and-forget and movable audio meshes.
