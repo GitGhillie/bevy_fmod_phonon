@@ -50,7 +50,7 @@ fn main() {
         .add_plugins(PerfUiPlugin)
         .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
-        //.add_systems(Update, move_object)
+        .add_systems(Update, move_object)
         .run();
 }
 

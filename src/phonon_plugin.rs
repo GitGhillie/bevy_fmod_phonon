@@ -64,13 +64,16 @@ impl Plugin for PhononPlugin {
         .add_systems(
             Update,
             (
-                register_phonon_sources,
-                phonon_mesh::register_audio_meshes,
-                phonon_mesh::move_audio_meshes,
-                update_steam_audio_listener,
-                update_steam_audio_source,
-                update_steam_audio, //todo: order so this one is last (for consistency)
-            ),
+                (
+                    register_phonon_sources,
+                    phonon_mesh::register_audio_meshes,
+                    phonon_mesh::move_audio_meshes,
+                    update_steam_audio_listener,
+                    update_steam_audio_source,
+                ),
+                update_steam_audio,
+            )
+                .chain(),
         );
     }
 }
@@ -88,8 +91,6 @@ fn update_steam_audio_listener(
     });
 
     //sim_res.simulator.set_reflections(4096, 16, 2.0, 1, 1.0);
-
-    sim_res.simulator.commit(); //todo: is it necessary?
 }
 
 fn update_steam_audio_source(
@@ -104,11 +105,10 @@ fn update_steam_audio_source(
             rotation,
         });
     }
-
-    sim_res.simulator.commit(); //todo: is it necessary?
 }
 
 fn update_steam_audio(sim_res: ResMut<SteamSimulation>) {
+    // Commit changes to the sources, listener and scene.
     sim_res.simulator.commit();
 
     sim_res.simulator.run_direct();
