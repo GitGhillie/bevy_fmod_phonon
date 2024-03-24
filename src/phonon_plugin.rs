@@ -151,6 +151,14 @@ fn register_phonon_sources(
     }
 }
 
+// // Deregister phonon source
+// impl Drop for PhononSource {
+//     fn drop(&mut self) {
+//         println!("Dropping source!");
+//         //todo fmod remove source
+//     }
+// }
+
 //todo delete PhononSource using the address and iplFMODRemoveSource
 
 // todo: The function below could potentially be simplified/improved with the help

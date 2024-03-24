@@ -6,6 +6,7 @@
 //! Use WASD, Space, Shift and the mouse to move around.
 
 use bevy::prelude::*;
+use bevy::time::common_conditions::on_timer;
 use bevy::window::PresentMode;
 use bevy_fmod::prelude::AudioSource;
 use bevy_fmod::prelude::*;
@@ -16,6 +17,7 @@ use smooth_bevy_cameras::{
     LookTransformPlugin,
 };
 use std::f32::consts::PI;
+use std::time::Duration;
 
 use iyes_perf_ui::prelude::*;
 
@@ -51,6 +53,10 @@ fn main() {
         .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
         .add_systems(Update, move_object)
+        .add_systems(
+            Update,
+            remove_source.run_if(on_timer(Duration::from_secs(5))),
+        )
         .run();
 }
 
@@ -150,5 +156,15 @@ fn move_object(mut obj_query: Query<&mut Transform, With<TorusMarker>>, time: Re
 fn play_music(mut audio_sources: Query<&AudioSource>) {
     for audio_source in audio_sources.iter_mut() {
         audio_source.play();
+    }
+}
+
+fn remove_source(
+    mut commands: Commands,
+    audio_sources: Query<(Entity, &AudioSource), With<AudioSource>>,
+) {
+    for (ent, audio_source) in audio_sources.iter() {
+        audio_source.stop();
+        commands.entity(ent).despawn_recursive();
     }
 }

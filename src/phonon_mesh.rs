@@ -90,9 +90,7 @@ impl TryFrom<&Mesh> for AudioMesh {
                     Indices::U16(indices) => {
                         indices.iter().map(|indices| *indices as u32).collect()
                     }
-                    Indices::U32(indices) => {
-                        indices.iter().map(|indices| *indices as u32).collect()
-                    }
+                    Indices::U32(indices) => indices.iter().map(|indices| *indices).collect(),
                 };
 
                 match mesh.primitive_topology() {
