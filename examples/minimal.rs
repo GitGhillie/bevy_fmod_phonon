@@ -27,7 +27,7 @@ fn main() {
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
-                    present_mode: PresentMode::Immediate,
+                    present_mode: PresentMode::AutoVsync,
                     ..default()
                 }),
                 ..default()
@@ -67,7 +67,7 @@ fn setup_scene(
     let material = materials.add(Color::rgb(0.8, 0.7, 0.6));
 
     //28 -> 22k
-    let cube_num = 2;
+    let cube_num = 3;
 
     for x in 0..cube_num {
         for y in 0..cube_num {

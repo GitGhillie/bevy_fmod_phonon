@@ -31,9 +31,7 @@ pub struct PhononPlugin;
 
 impl Plugin for PhononPlugin {
     fn build(&self, app: &mut App) {
-        // todo: Check if default sampling rate is also OK
-
-        let sampling_rate = 48000;
+        let sampling_rate = 48000; // Needs to be equal to FMOD sampling rate.
         let frame_size = 1024;
         let context = Context::new().unwrap();
 
@@ -81,12 +79,15 @@ fn update_steam_audio_listener(
     mut sim_res: ResMut<SteamSimulation>,
     listener_query: Query<&GlobalTransform, With<AudioListener>>,
 ) {
-    let listener_translation = listener_query.get_single().unwrap().translation();
+    let listener_transform = listener_query.get_single().unwrap();
+    let (_rotation, rotation, translation) = listener_transform.to_scale_rotation_translation();
 
     sim_res.simulator.set_listener(Orientation {
-        translation: listener_translation,
-        ..Default::default() // todo orientation if necessary
+        translation,
+        rotation,
     });
+
+    //sim_res.simulator.set_reflections(4096, 16, 2.0, 1, 1.0);
 
     sim_res.simulator.commit(); //todo: is it necessary?
 }
@@ -96,28 +97,11 @@ fn update_steam_audio_source(
     mut source_query: Query<(&GlobalTransform, &mut PhononSource)>,
 ) {
     for (source_transform, mut phonon_source) in source_query.iter_mut() {
-        let source_translation = source_transform.translation();
-
-        // phonon_source.source.set_inputs(
-        //     SimulationFlags::all(),
-        //     &SimulationInputs {
-        //         flags: SimulationFlags::all(),
-        //         direct_flags: DirectSimulationFlags::all(),
-        //         occlusion_type: OcclusionType::Volumetric {
-        //             occlusion_radius: 0.5,
-        //             num_occlusion_samples: 10, // Note: The maximum is set in the Simulator settings
-        //         },
-        //         source: Orientation {
-        //             origin: source_translation.into(),
-        //             ..Default::default() // todo orientation
-        //         },
-        //         ..Default::default()
-        //     },
-        // );
+        let (_rotation, rotation, translation) = source_transform.to_scale_rotation_translation();
 
         phonon_source.source.set_source(Orientation {
-            translation: source_translation,
-            ..Default::default() // todo orientation
+            translation,
+            rotation,
         });
     }
 
@@ -148,12 +132,16 @@ fn register_phonon_sources(
             source.set_air_absorption(AirAbsorptionModel::Default);
             source.set_occlusion();
             source.set_transmission(3);
+            //source.set_reflections();
 
-            let source_address = steamaudio::fmod::fmod_add_source(&source); //todo make component
+            let source_address = fmod::fmod_add_source(&source);
+            let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
 
             // By setting this field the Steam Audio FMOD plugin can retrieve the
             // simulation results like occlusion and reflection.
-            phonon_dsp.set_parameter_int(33, source_address).unwrap();
+            phonon_dsp
+                .set_parameter_int(simulation_outputs_parameter_index, source_address)
+                .unwrap();
 
             commands.entity(audio_entity).insert(PhononSource {
                 address: source_address,
