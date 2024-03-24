@@ -1,5 +1,5 @@
 use crate::phonon_mesh;
-use crate::phonon_mesh::StaticMeshes;
+use crate::phonon_mesh::instancing::StaticMeshes;
 use bevy::prelude::*;
 use bevy_fmod::prelude::AudioListener;
 use bevy_fmod::prelude::AudioSource;
