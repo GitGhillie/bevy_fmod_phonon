@@ -94,17 +94,13 @@ fn setup_scene(
 
     commands.spawn((
         PbrBundle {
-            mesh: mesh.clone(),
+            mesh: meshes.add(Cuboid::from_size(Vec3::splat(10.0))),
             material: material.clone(),
             transform: Transform::from_rotation(Quat::from_rotation_x(PI * 0.5))
-                .with_translation(Vec3::new(1.0, 0.0, 0.0)),
+                .with_translation(Vec3::new(7.0, 0.0, 0.0)),
             ..default()
         },
-        NeedsAudioMesh(PhononMaterial {
-            absorption: [0.0, 0.0, 0.0],
-            scattering: 0.05,
-            transmission: [0.5, 0.2, 0.1],
-        }),
+        NeedsAudioMesh(materials::METAL),
         TorusMarker,
     ));
 

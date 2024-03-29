@@ -10,6 +10,9 @@ use steamaudio::geometry::Orientation;
 use steamaudio::hrtf::Hrtf;
 use steamaudio::simulation::{AirAbsorptionModel, DistanceAttenuationModel, Simulator, Source};
 
+use bevy::time::common_conditions::on_timer;
+use std::time::Duration;
+
 #[derive(Component)]
 struct PhononSource {
     address: i32,
@@ -46,6 +49,7 @@ impl Plugin for PhononPlugin {
         // simulation_settings.max_num_occlusion_samples = 10; // This only sets the max, the actual amount is set per source
         let mut simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
         simulator.set_scene(&scene);
+        simulator.set_reflections(16, 8, 2.0, 1, 1.0);
 
         fmod::init_fmod(&context);
         fmod::set_hrtf(&hrtf);
@@ -63,16 +67,15 @@ impl Plugin for PhononPlugin {
         .add_systems(
             Update,
             (
-                (
-                    register_phonon_sources,
-                    phonon_mesh::register_audio_meshes,
-                    phonon_mesh::update_audio_mesh_transforms,
-                    update_steam_audio_listener,
-                    update_steam_audio_source,
-                ),
+                //todo remove timer
+                register_phonon_sources.run_if(on_timer(Duration::from_secs(1))),
+                phonon_mesh::register_audio_meshes,
+                phonon_mesh::update_audio_mesh_transforms,
+                update_steam_audio_listener,
+                update_steam_audio_source,
                 update_steam_audio,
             )
-                .chain(),
+                .chain(), // todo chain so everything except update_steam_audio can be done in parallel
         );
     }
 }
@@ -88,8 +91,6 @@ fn update_steam_audio_listener(
         translation,
         rotation,
     });
-
-    //sim_res.simulator.set_reflections(4096, 16, 2.0, 1, 1.0);
 }
 
 fn update_steam_audio_source(mut source_query: Query<(&GlobalTransform, &mut PhononSource)>) {
@@ -108,7 +109,7 @@ fn update_steam_audio(sim_res: ResMut<SteamSimulation>) {
     sim_res.simulator.commit();
 
     sim_res.simulator.run_direct();
-    //sim_res.simulator.run_reflections(); //todo make optional
+    sim_res.simulator.run_reflections(); //todo make optional
 
     // The Steam Audio FMOD plugin will periodically collect the simulation outputs
     // as long as the plugin has handles to the Steam Audio sources.
@@ -123,27 +124,32 @@ fn register_phonon_sources(
 ) {
     for (audio_entity, audio_source_fmod) in audio_sources.iter_mut() {
         if let Some(phonon_dsp) = get_phonon_spatializer(audio_source_fmod.event_instance) {
-            let mut source = sim_res.simulator.create_source().unwrap();
-            source.set_active(true);
-            source.set_distance_attenuation(DistanceAttenuationModel::Default);
-            source.set_air_absorption(AirAbsorptionModel::Default);
-            source.set_occlusion();
-            source.set_transmission(3);
-            //source.set_reflections();
+            println!("Got phonon DSP");
+            // let mut source = sim_res.simulator.create_source(true).unwrap();
+            // //source.set_distance_attenuation(DistanceAttenuationModel::Default);
+            // //source.set_air_absorption(AirAbsorptionModel::Default);
+            // source.set_occlusion();
+            // source.set_transmission(3);
+            // source.set_reflections();
+            // source.set_active(true);
+            //
+            // println!("Created source");
+            //
+            // let source_address = fmod::add_source(&source);
+            // let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
+            //
+            // // By setting this field the Steam Audio FMOD plugin can retrieve the
+            // // simulation results like occlusion and reflection.
+            // phonon_dsp
+            //     .set_parameter_int(simulation_outputs_parameter_index, source_address)
+            //     .unwrap();
 
-            let source_address = fmod::add_source(&source);
-            let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
+            // commands.entity(audio_entity).insert(PhononSource {
+            //     address: 0, //todo change back to source_address
+            //     source,
+            // });
 
-            // By setting this field the Steam Audio FMOD plugin can retrieve the
-            // simulation results like occlusion and reflection.
-            phonon_dsp
-                .set_parameter_int(simulation_outputs_parameter_index, source_address)
-                .unwrap();
-
-            commands.entity(audio_entity).insert(PhononSource {
-                address: source_address,
-                source,
-            });
+            println!("Added source");
         }
     }
 }
@@ -160,6 +166,7 @@ fn register_phonon_sources(
 /// This way we can later set its parameters.
 /// The DSP can basically be anywhere in the DSP chain, so we have to search for it.
 pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
+    println!("Gettin spatializer");
     if let Ok(channel_group) = instance.get_channel_group() {
         let num_groups = channel_group.get_num_groups().unwrap();
 
@@ -169,7 +176,7 @@ pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
 
             for index_dsp in 0..group_num_dsp {
                 let dsp = group.get_dsp(index_dsp).unwrap();
-                let dsp_info = dsp.get_info().unwrap();
+                let dsp_info = dsp.get_info().unwrap(); // this line seems to cause issues when Steam Audio is configured for reflection simulations??
 
                 if dsp_info.0 == "Steam Audio Spatializer" {
                     return Some(dsp);
@@ -178,5 +185,6 @@ pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
         }
     }
 
+    println!("Could not find spatializer");
     None
 }
