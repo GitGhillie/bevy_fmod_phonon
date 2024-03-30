@@ -33,8 +33,9 @@ pub(crate) fn register_audio_meshes(
     }
 }
 
+//Changed<GlobalTransform> or Changed Mesh? not worth it probably
 pub(crate) fn update_audio_mesh_transforms(
-    mut object_query: Query<(&GlobalTransform, &mut PhononMesh), Changed<GlobalTransform>>,
+    mut object_query: Query<(&GlobalTransform, &mut PhononMesh)>,
 ) {
     for (transform, mut audio_instance) in &mut object_query {
         let instanced_mesh = &mut audio_instance.0;

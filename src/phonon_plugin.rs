@@ -49,7 +49,7 @@ impl Plugin for PhononPlugin {
         // simulation_settings.max_num_occlusion_samples = 10; // This only sets the max, the actual amount is set per source
         let mut simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
         simulator.set_scene(&scene);
-        simulator.set_reflections(64, 8, 2.0, 1, 1.0);
+        simulator.set_reflections(512, 8, 2.0, 1, 1.0);
 
         fmod::init_fmod(&context);
         fmod::set_hrtf(&hrtf);
@@ -68,7 +68,7 @@ impl Plugin for PhononPlugin {
             Update,
             (
                 //todo remove timer
-                register_phonon_sources.run_if(on_timer(Duration::from_secs(1))),
+                register_phonon_sources, //.run_if(on_timer(Duration::from_secs(1))),
                 phonon_mesh::register_audio_meshes,
                 phonon_mesh::update_audio_mesh_transforms,
                 update_steam_audio_listener,
@@ -128,7 +128,7 @@ fn register_phonon_sources(
             //source.set_distance_attenuation(DistanceAttenuationModel::Default);
             //source.set_air_absorption(AirAbsorptionModel::Default);
             source.set_occlusion();
-            source.set_transmission(3);
+            source.set_transmission(1);
             source.set_reflections();
             source.set_active(true);
 
