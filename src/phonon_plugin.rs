@@ -49,7 +49,7 @@ impl Plugin for PhononPlugin {
         // simulation_settings.max_num_occlusion_samples = 10; // This only sets the max, the actual amount is set per source
         let mut simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
         simulator.set_scene(&scene);
-        simulator.set_reflections(16, 8, 2.0, 1, 1.0);
+        simulator.set_reflections(64, 8, 2.0, 1, 1.0);
 
         fmod::init_fmod(&context);
         fmod::set_hrtf(&hrtf);
@@ -124,32 +124,27 @@ fn register_phonon_sources(
 ) {
     for (audio_entity, audio_source_fmod) in audio_sources.iter_mut() {
         if let Some(phonon_dsp) = get_phonon_spatializer(audio_source_fmod.event_instance) {
-            println!("Got phonon DSP");
-            // let mut source = sim_res.simulator.create_source(true).unwrap();
-            // //source.set_distance_attenuation(DistanceAttenuationModel::Default);
-            // //source.set_air_absorption(AirAbsorptionModel::Default);
-            // source.set_occlusion();
-            // source.set_transmission(3);
-            // source.set_reflections();
-            // source.set_active(true);
-            //
-            // println!("Created source");
-            //
-            // let source_address = fmod::add_source(&source);
-            // let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
-            //
-            // // By setting this field the Steam Audio FMOD plugin can retrieve the
-            // // simulation results like occlusion and reflection.
-            // phonon_dsp
-            //     .set_parameter_int(simulation_outputs_parameter_index, source_address)
-            //     .unwrap();
+            let mut source = sim_res.simulator.create_source(true).unwrap();
+            //source.set_distance_attenuation(DistanceAttenuationModel::Default);
+            //source.set_air_absorption(AirAbsorptionModel::Default);
+            source.set_occlusion();
+            source.set_transmission(3);
+            source.set_reflections();
+            source.set_active(true);
 
-            // commands.entity(audio_entity).insert(PhononSource {
-            //     address: 0, //todo change back to source_address
-            //     source,
-            // });
+            let source_address = fmod::add_source(&source);
+            let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
 
-            println!("Added source");
+            // By setting this field the Steam Audio FMOD plugin can retrieve the
+            // simulation results like occlusion and reflection.
+            phonon_dsp
+                .set_parameter_int(simulation_outputs_parameter_index, source_address)
+                .unwrap();
+
+            commands.entity(audio_entity).insert(PhononSource {
+                address: 0, //todo change back to source_address
+                source,
+            });
         }
     }
 }
@@ -166,25 +161,29 @@ fn register_phonon_sources(
 /// This way we can later set its parameters.
 /// The DSP can basically be anywhere in the DSP chain, so we have to search for it.
 pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
-    println!("Gettin spatializer");
     if let Ok(channel_group) = instance.get_channel_group() {
         let num_groups = channel_group.get_num_groups().unwrap();
 
-        for index_group in 0..num_groups {
-            let group = channel_group.get_group(index_group).unwrap();
-            let group_num_dsp = group.get_num_ds_ps().unwrap();
+        // Hardcoded for now: The commented out code worked fine when reflections weren't setup
+        // yet (so only occlusion/transmission) but ever since then it started causing crashes.
+        let group = channel_group.get_group(1).unwrap();
+        return Some(group.get_dsp(0).unwrap());
 
-            for index_dsp in 0..group_num_dsp {
-                let dsp = group.get_dsp(index_dsp).unwrap();
-                let dsp_info = dsp.get_info().unwrap(); // this line seems to cause issues when Steam Audio is configured for reflection simulations??
-
-                if dsp_info.0 == "Steam Audio Spatializer" {
-                    return Some(dsp);
-                }
-            }
-        }
+        // for index_group in 0..num_groups {
+        //     let group = channel_group.get_group(index_group).unwrap();
+        //     let group_num_dsp = group.get_num_ds_ps().unwrap();
+        //
+        //     for index_dsp in 0..group_num_dsp {
+        //         let dsp = group.get_dsp(index_dsp).unwrap();
+        //         let dsp_info = dsp.get_info().unwrap(); // this line seems to cause issues when Steam Audio is configured for reflection simulations??
+        //
+        //         if dsp_info.0 == "Steam Audio Spatializer" {
+        //             println!("index group {} index dsp {}", index_group, index_dsp);
+        //             return Some(dsp);
+        //         }
+        //     }
+        // }
     }
 
-    println!("Could not find spatializer");
     None
 }
