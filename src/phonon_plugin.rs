@@ -10,9 +10,6 @@ use steamaudio::geometry::Orientation;
 use steamaudio::hrtf::Hrtf;
 use steamaudio::simulation::{AirAbsorptionModel, DistanceAttenuationModel, Simulator, Source};
 
-use bevy::time::common_conditions::on_timer;
-use std::time::Duration;
-
 #[derive(Component)]
 struct PhononSource {
     address: i32,
@@ -45,11 +42,11 @@ impl Plugin for PhononPlugin {
         let scene = context.create_scene().unwrap();
         scene.commit();
 
-        // todo! simulationsettings !!!!!!!!!!!!!!!!!!!!!!!
-        // simulation_settings.max_num_occlusion_samples = 10; // This only sets the max, the actual amount is set per source
+        // todo! simulationsettings are pretty much hardcoded right now
+        // simulation_settings.max_num_occlusion_samples = 8; // This only sets the max, the actual amount is set per source
         let mut simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
         simulator.set_scene(&scene);
-        simulator.set_reflections(512, 8, 2.0, 1, 1.0);
+        simulator.set_reflections(4096, 16, 2.0, 1, 1.0);
 
         fmod::init_fmod(&context);
         fmod::set_hrtf(&hrtf);
@@ -67,15 +64,16 @@ impl Plugin for PhononPlugin {
         .add_systems(
             Update,
             (
-                //todo remove timer
-                register_phonon_sources, //.run_if(on_timer(Duration::from_secs(1))),
-                phonon_mesh::register_audio_meshes,
-                phonon_mesh::update_audio_mesh_transforms,
-                update_steam_audio_listener,
-                update_steam_audio_source,
+                (
+                    register_phonon_sources,
+                    phonon_mesh::register_audio_meshes,
+                    phonon_mesh::update_audio_mesh_transforms,
+                    update_steam_audio_listener,
+                    update_steam_audio_source,
+                ),
                 update_steam_audio,
             )
-                .chain(), // todo chain so everything except update_steam_audio can be done in parallel
+                .chain(),
         );
     }
 }
@@ -125,8 +123,8 @@ fn register_phonon_sources(
     for (audio_entity, audio_source_fmod) in audio_sources.iter_mut() {
         if let Some(phonon_dsp) = get_phonon_spatializer(audio_source_fmod.event_instance) {
             let mut source = sim_res.simulator.create_source(true).unwrap();
-            //source.set_distance_attenuation(DistanceAttenuationModel::Default);
-            //source.set_air_absorption(AirAbsorptionModel::Default);
+            source.set_distance_attenuation(DistanceAttenuationModel::Default);
+            source.set_air_absorption(AirAbsorptionModel::Default);
             source.set_occlusion();
             source.set_transmission(1);
             source.set_reflections();
@@ -142,7 +140,7 @@ fn register_phonon_sources(
                 .unwrap();
 
             commands.entity(audio_entity).insert(PhononSource {
-                address: 0, //todo change back to source_address
+                address: source_address,
                 source,
             });
         }
@@ -160,14 +158,12 @@ fn register_phonon_sources(
 /// The goal here is to find the Steam Audio Spatializer DSP associated with an instance.
 /// This way we can later set its parameters.
 /// The DSP can basically be anywhere in the DSP chain, so we have to search for it.
+/// (That's the idea, but see issue #3. Once that's fixed it should also be noted that
+/// the DSP can also be on the master track itself, which is channel_group).
 pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
     if let Ok(channel_group) = instance.get_channel_group() {
-        let num_groups = channel_group.get_num_groups().unwrap();
-
-        // Hardcoded for now: The commented out code worked fine when reflections weren't setup
-        // yet (so only occlusion/transmission) but ever since then it started causing crashes.
-        let group = channel_group.get_group(1).unwrap();
-        return Some(group.get_dsp(0).unwrap());
+        // 0 is the DSP all the way on the right on the master track
+        return Some(channel_group.get_dsp(0).unwrap());
 
         // for index_group in 0..num_groups {
         //     let group = channel_group.get_group(index_group).unwrap();

@@ -87,7 +87,7 @@ pub mod materials {
     };
     pub const CARPET: PhononMaterial = PhononMaterial {
         absorption: [0.24, 0.69, 0.73],
-        scattering: 0.05,
+        scattering: 0.90,
         transmission: [0.020, 0.005, 0.003],
     };
     pub const GLASS: PhononMaterial = PhononMaterial {

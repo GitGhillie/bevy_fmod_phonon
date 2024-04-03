@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 bevy = { version = "0.13", default-features = false }
-steamaudio = { path = "C:/SteamAudioExperiments/bevy/steamaudio", features = ["fmod"] } # Todo: Replace path
+steamaudio = { git = "https://github.com/GitGhillie/steamaudio.git", branch = "merged", features = ["fmod"] }
 bevy_fmod = { git = "https://github.com/Salzian/bevy_fmod.git", branch = "main" }
 libfmod = "~2.206.2" # todo check if we can get rid of this dependency
 
