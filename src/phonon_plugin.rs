@@ -1,14 +1,14 @@
 use crate::phonon_mesh;
 use crate::phonon_mesh::instancing::StaticMeshes;
+use audionimbus::context::Context;
+use audionimbus::fmod;
+use audionimbus::geometry::Orientation;
+use audionimbus::hrtf::Hrtf;
+use audionimbus::simulation::{AirAbsorptionModel, DistanceAttenuationModel, Simulator, Source};
 use bevy::prelude::*;
 use bevy_fmod::prelude::AudioListener;
 use bevy_fmod::prelude::AudioSource;
 use libfmod::{Dsp, EventInstance};
-use steamaudio::context::Context;
-use steamaudio::fmod;
-use steamaudio::geometry::Orientation;
-use steamaudio::hrtf::Hrtf;
-use steamaudio::simulation::{AirAbsorptionModel, DistanceAttenuationModel, Simulator, Source};
 
 #[derive(Component)]
 struct PhononSource {
@@ -25,7 +25,7 @@ pub struct SteamSimulation {
     pub context: Context,
     pub hrtf: Hrtf,
     pub simulator: Simulator,
-    pub scene: steamaudio::scene::Scene,
+    pub scene: audionimbus::scene::Scene,
 }
 
 pub struct PhononPlugin;

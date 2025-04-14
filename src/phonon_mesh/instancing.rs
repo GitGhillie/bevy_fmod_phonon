@@ -6,10 +6,10 @@ use bevy::asset::{Assets, Handle};
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::{Deref, DerefMut, Mesh, ResMut, Resource, Transform};
 use std::collections::HashMap;
-use steamaudio::scene::InstancedMesh;
+use audionimbus::scene::InstancedMesh;
 
 #[derive(Resource, Default, Deref, DerefMut)]
-pub(crate) struct StaticMeshes(HashMap<(Handle<Mesh>, PhononMaterial), steamaudio::scene::Scene>);
+pub(crate) struct StaticMeshes(HashMap<(Handle<Mesh>, PhononMaterial), audionimbus::scene::Scene>);
 
 /// Some information necessary to convert Bevy meshes to Steam Audio meshes
 #[derive(SystemParam)]

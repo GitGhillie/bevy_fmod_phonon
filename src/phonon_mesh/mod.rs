@@ -4,7 +4,7 @@ mod mesh;
 
 use crate::phonon_mesh::instancing::MeshParam;
 use bevy::prelude::*;
-use steamaudio::scene::InstancedMesh;
+use audionimbus::scene::InstancedMesh;
 
 #[derive(Component, Default)]
 pub struct NeedsAudioMesh(pub material::PhononMaterial);
