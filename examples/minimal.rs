@@ -35,11 +35,11 @@ fn main() {
             }),
             FmodPlugin {
                 audio_banks_paths: &[
-                    "./assets/audio/demo_project/Build/Desktop/Master.bank",
-                    "./assets/audio/demo_project/Build/Desktop/Master.strings.bank",
-                    "./assets/audio/demo_project/Build/Desktop/Music.bank",
+                    "./assets/demo_project/Build/Desktop/Master.bank",
+                    "./assets/demo_project/Build/Desktop/Master.strings.bank",
+                    "./assets/demo_project/Build/Desktop/Music.bank",
                 ],
-                plugin_paths: Some(&["./phonon_fmod.dll"]),
+                plugin_paths: Some(&["./libphonon_fmod.so"]),
             },
             PhononPlugin,
         ))
