@@ -24,7 +24,7 @@ pub(crate) fn register_audio_meshes(
         let instanced_mesh = mesh_param
             .create_instanced_mesh(mesh_handle, &requested_material.0)
             .unwrap();
-        //instanced_mesh.set_visible(true); // todo where did this go?
+        mesh_param.simulator.scene.add_instanced_mesh(&instanced_mesh);
 
         let scene_root = &mut mesh_param.simulator.scene;
         scene_root.commit();
