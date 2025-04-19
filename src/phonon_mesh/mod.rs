@@ -42,7 +42,8 @@ pub(crate) fn update_audio_mesh_transforms(
     for (transform, mut audio_instance) in &mut object_query {
         let instanced_mesh = &mut audio_instance.0;
         let scene_root = &simulation.scene;
-        let tf_matrix = transform.compute_matrix();
+        // todo check if transpose is correct
+        let tf_matrix = transform.compute_matrix().transpose();
         instanced_mesh.update_transform(
             scene_root,
             &audionimbus::Matrix::new(tf_matrix.to_cols_array_2d()),

@@ -48,12 +48,12 @@ fn create_instanced_mesh_internal(
         // todo: Differentiate between set-and-forget and movable audio meshes.
         // Currently compute_matrix will be called every frame for every mesh.
 
-        let tf_matrix = Transform::default().compute_matrix();
+        // todo: Check if correct
+        let tf_matrix = Transform::default().compute_matrix().transpose();
         let instanced_mesh = InstancedMesh::try_new(
             &scene_root,
             &InstancedMeshSettings {
                 sub_scene: &static_mesh_scene,
-                // todo: This needs a transpose probably:
                 transform: &audionimbus::Matrix::new(tf_matrix.to_cols_array_2d()),
             },
         )
