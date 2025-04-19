@@ -1,10 +1,14 @@
 use crate::phonon_mesh;
 use crate::phonon_mesh::instancing::StaticMeshes;
 use audionimbus::context::Context;
-use audionimbus::fmod;
-use audionimbus::geometry::Orientation;
 use audionimbus::hrtf::Hrtf;
-use audionimbus::simulation::{AirAbsorptionModel, DistanceAttenuationModel, Simulator, Source};
+use audionimbus::simulation::{Simulator, Source};
+use audionimbus::{
+    fmod, AirAbsorptionModel, AudioSettings, ContextSettings, CoordinateSystem,
+    DirectSimulationParameters, DirectSimulationSettings, Directivity, DistanceAttenuationModel,
+    Occlusion, OcclusionAlgorithm, SceneParams, SceneSettings, SimulationFlags, SimulationInputs,
+    SimulationSettings, SimulationSharedInputs, SourceSettings,
+};
 use bevy::prelude::*;
 use bevy_fmod::prelude::AudioListener;
 use bevy_fmod::prelude::AudioSource;
@@ -25,7 +29,7 @@ pub struct SteamSimulation {
     pub context: Context,
     pub hrtf: Hrtf,
     pub simulator: Simulator,
-    pub scene: audionimbus::scene::Scene,
+    pub scene: audionimbus::Scene,
 }
 
 pub struct PhononPlugin;
@@ -34,25 +38,42 @@ impl Plugin for PhononPlugin {
     fn build(&self, app: &mut App) {
         let sampling_rate = 48000; // Needs to be equal to FMOD sampling rate.
         let frame_size = 1024;
-        let context = Context::new().unwrap();
+        let context = Context::try_new(&ContextSettings::default()).unwrap();
 
-        let hrtf = context.create_hrtf(sampling_rate, frame_size).unwrap();
+        let audio_settings = AudioSettings {
+            sampling_rate,
+            frame_size,
+        };
+
+        let hrtf = Hrtf::try_new(
+            &context,
+            &audio_settings,
+            &audionimbus::HrtfSettings::default(),
+        )
+        .unwrap();
 
         // This is the main scene to which all the geometry will be added later
-        let scene = context.create_scene().unwrap();
+        let mut scene = audionimbus::Scene::try_new(&context, &SceneSettings::Default).unwrap();
         scene.commit();
 
         // todo! simulationsettings are pretty much hardcoded right now
-        // simulation_settings.max_num_occlusion_samples = 8; // This only sets the max, the actual amount is set per source
-        let mut simulator = context.create_simulator(sampling_rate, frame_size).unwrap();
+        let simulation_settings = SimulationSettings {
+            scene_params: SceneParams::Default,
+            direct_simulation: Some(DirectSimulationSettings {
+                max_num_occlusion_samples: 8, // This only sets the max, the actual amount is set per source
+            }),
+            reflections_simulation: None,
+            pathing_simulation: None,
+            sampling_rate,
+            frame_size,
+        };
+        let mut simulator = Simulator::try_new(&context, simulation_settings).unwrap();
         simulator.set_scene(&scene);
-        simulator.set_reflections(4096, 16, 2.0, 1, 1.0);
+        //simulator.set_reflections(4096, 16, 2.0, 1, 1.0);
 
-        fmod::init_fmod(&context);
+        fmod::initialize(&context);
         fmod::set_hrtf(&hrtf);
-
-        let settings = fmod::fmod_create_settings(sampling_rate, frame_size);
-        fmod::set_simulation_settings(settings);
+        fmod::set_simulation_settings(simulation_settings);
 
         app.insert_resource(SteamSimulation {
             simulator,
@@ -83,31 +104,86 @@ fn update_steam_audio_listener(
     listener_query: Query<&GlobalTransform, With<AudioListener>>,
 ) {
     let listener_transform = listener_query.get_single().unwrap();
-    let (_rotation, rotation, translation) = listener_transform.to_scale_rotation_translation();
 
-    sim_res.simulator.set_listener(Orientation {
-        translation,
-        rotation,
-    });
+    // todo this should probably come from a resource
+    let simulation_flags = SimulationFlags::DIRECT;
+
+    // todo find a better way for these conversions
+    let origin = audionimbus::Vector3::from(nimbus_vec3(listener_transform.translation()));
+    let right = audionimbus::Vector3::from(nimbus_vec3(*listener_transform.right()));
+    let up = audionimbus::Vector3::from(nimbus_vec3(*listener_transform.up()));
+    let ahead = audionimbus::Vector3::from(nimbus_vec3(*listener_transform.forward()));
+
+    // todo this should probably come from a resource, only the listener transform changes here
+    let shared_inputs = SimulationSharedInputs {
+        listener: CoordinateSystem {
+            right,
+            up,
+            ahead,
+            origin,
+        },
+        num_rays: 8,
+        num_bounces: 128,
+        duration: 1.0,
+        order: 1,
+        irradiance_min_distance: 0.1,
+        pathing_visualization_callback: None,
+    };
+
+    sim_res
+        .simulator
+        .set_shared_inputs(simulation_flags, &shared_inputs);
 }
 
 fn update_steam_audio_source(mut source_query: Query<(&GlobalTransform, &mut PhononSource)>) {
     for (source_transform, mut phonon_source) in source_query.iter_mut() {
-        let (_rotation, rotation, translation) = source_transform.to_scale_rotation_translation();
+        // todo this should probably come from a resource
+        let simulation_flags = SimulationFlags::DIRECT;
 
-        phonon_source.source.set_source(Orientation {
-            translation,
-            rotation,
-        });
+        // todo this should probably come from a resource
+        let occlusion_settings = Occlusion {
+            transmission: None,
+            algorithm: OcclusionAlgorithm::Raycast,
+        };
+
+        // todo this should probably come from a resource
+        let direct_simulation_parameters = DirectSimulationParameters {
+            distance_attenuation: Some(DistanceAttenuationModel::Default),
+            air_absorption: Some(AirAbsorptionModel::Default),
+            directivity: None,
+            occlusion: Some(occlusion_settings),
+        };
+
+        // todo find a better way for these conversions
+        let origin = audionimbus::Vector3::from(nimbus_vec3(source_transform.translation()));
+        let right = audionimbus::Vector3::from(nimbus_vec3(*source_transform.right()));
+        let up = audionimbus::Vector3::from(nimbus_vec3(*source_transform.up()));
+        let ahead = audionimbus::Vector3::from(nimbus_vec3(*source_transform.forward()));
+
+        let simulation_inputs = SimulationInputs {
+            source: CoordinateSystem {
+                right,
+                up,
+                ahead,
+                origin,
+            },
+            direct_simulation: Some(direct_simulation_parameters),
+            reflections_simulation: None,
+            pathing_simulation: None,
+        };
+
+        phonon_source
+            .source
+            .set_inputs(simulation_flags, simulation_inputs);
     }
 }
 
-fn update_steam_audio(sim_res: ResMut<SteamSimulation>) {
+fn update_steam_audio(mut sim_res: ResMut<SteamSimulation>) {
     // Commit changes to the sources, listener and scene.
     sim_res.simulator.commit();
 
     sim_res.simulator.run_direct();
-    sim_res.simulator.run_reflections(); //todo make optional
+    //sim_res.simulator.run_reflections(); //todo make optional
 
     // The Steam Audio FMOD plugin will periodically collect the simulation outputs
     // as long as the plugin has handles to the Steam Audio sources.
@@ -122,13 +198,23 @@ fn register_phonon_sources(
 ) {
     for (audio_entity, audio_source_fmod) in audio_sources.iter_mut() {
         if let Some(phonon_dsp) = get_phonon_spatializer(audio_source_fmod.event_instance) {
-            let mut source = sim_res.simulator.create_source(true).unwrap();
-            source.set_distance_attenuation(DistanceAttenuationModel::Default);
-            source.set_air_absorption(AirAbsorptionModel::Default);
-            source.set_occlusion();
-            source.set_transmission(1);
-            source.set_reflections();
-            source.set_active(true);
+            // todo this should probably come from a resource
+            let simulation_flags = SimulationFlags::DIRECT;
+
+            let source = audionimbus::Source::try_new(
+                &sim_res.simulator,
+                &SourceSettings {
+                    flags: simulation_flags,
+                },
+            )
+            .unwrap();
+
+            // source.set_distance_attenuation(DistanceAttenuationModel::Default);
+            // source.set_air_absorption(AirAbsorptionModel::Default);
+            // source.set_occlusion();
+            // source.set_transmission(1);
+            // source.set_reflections();
+            // source.set_active(true); //todo what is this?
 
             let source_address = fmod::add_source(&source);
             let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
@@ -147,6 +233,7 @@ fn register_phonon_sources(
     }
 }
 
+// todo test this
 // Deregister phonon source
 // impl Drop for PhononSource {
 //     fn drop(&mut self) {
@@ -182,4 +269,8 @@ pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
     }
 
     None
+}
+
+fn nimbus_vec3(input: Vec3) -> audionimbus::Vector3 {
+    audionimbus::Vector3::new(input.x, input.y, input.z)
 }

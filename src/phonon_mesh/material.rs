@@ -30,9 +30,9 @@ impl Hash for PhononMaterial {
     }
 }
 
-impl Into<steamaudio::scene::Material> for &PhononMaterial {
-    fn into(self) -> steamaudio::scene::Material {
-        steamaudio::scene::Material {
+impl Into<audionimbus::Material> for &PhononMaterial {
+    fn into(self) -> audionimbus::Material {
+        audionimbus::Material {
             absorption: self.absorption,
             scattering: self.scattering,
             transmission: self.transmission,
@@ -40,9 +40,9 @@ impl Into<steamaudio::scene::Material> for &PhononMaterial {
     }
 }
 
-impl Into<steamaudio::scene::Material> for PhononMaterial {
-    fn into(self) -> steamaudio::scene::Material {
-        steamaudio::scene::Material {
+impl Into<audionimbus::Material> for PhononMaterial {
+    fn into(self) -> audionimbus::Material {
+        audionimbus::Material {
             absorption: self.absorption,
             scattering: self.scattering,
             transmission: self.transmission,

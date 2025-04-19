@@ -3,8 +3,8 @@ pub(crate) mod material;
 mod mesh;
 
 use crate::phonon_mesh::instancing::MeshParam;
+use audionimbus::InstancedMesh;
 use bevy::prelude::*;
-use audionimbus::scene::InstancedMesh;
 
 #[derive(Component, Default)]
 pub struct NeedsAudioMesh(pub material::PhononMaterial);
@@ -25,7 +25,7 @@ pub(crate) fn register_audio_meshes(
             .unwrap();
         instanced_mesh.set_visible(true);
 
-        let scene_root = &mesh_param.simulator.scene;
+        let mut scene_root = &mesh_param.simulator.scene;
         scene_root.commit();
 
         commands.entity(ent).insert(PhononMesh(instanced_mesh));
