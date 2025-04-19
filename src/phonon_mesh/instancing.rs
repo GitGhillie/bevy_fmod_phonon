@@ -70,7 +70,7 @@ fn create_instanced_mesh_internal(
                 audionimbus::Scene::try_new(&simulator.context, &SceneSettings::Default).unwrap();
 
             // Add mesh
-            let mut static_mesh = StaticMesh::try_new(
+            let static_mesh = StaticMesh::try_new(
                 &sub_scene,
                 &StaticMeshSettings {
                     vertices: audionimbus_vertices(audio_mesh.vertices).as_slice(),
@@ -81,7 +81,7 @@ fn create_instanced_mesh_internal(
                 },
             )
             .unwrap();
-            //static_mesh.set_visible(true); //todo where is this now
+            sub_scene.add_static_mesh(&static_mesh);
             sub_scene.commit();
 
             static_meshes.insert((mesh_handle.clone(), material.clone()), sub_scene.clone());

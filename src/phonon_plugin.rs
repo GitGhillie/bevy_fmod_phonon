@@ -194,7 +194,7 @@ fn update_steam_audio(mut sim_res: ResMut<SteamSimulation>) {
 fn register_phonon_sources(
     mut audio_sources: Query<(Entity, &AudioSource), Without<PhononSource>>,
     mut commands: Commands,
-    sim_res: Res<SteamSimulation>,
+    mut sim_res: ResMut<SteamSimulation>,
 ) {
     for (audio_entity, audio_source_fmod) in audio_sources.iter_mut() {
         if let Some(phonon_dsp) = get_phonon_spatializer(audio_source_fmod.event_instance) {
@@ -208,17 +208,12 @@ fn register_phonon_sources(
                 },
             )
             .unwrap();
-
-            // source.set_distance_attenuation(DistanceAttenuationModel::Default);
-            // source.set_air_absorption(AirAbsorptionModel::Default);
-            // source.set_occlusion();
-            // source.set_transmission(1);
-            // source.set_reflections();
-            // source.set_active(true); //todo what is this?
+            
+            sim_res.simulator.add_source(&source);
 
             let source_address = fmod::add_source(&source);
             let simulation_outputs_parameter_index = 33; //todo explain where this number comes from
-
+            
             // By setting this field the Steam Audio FMOD plugin can retrieve the
             // simulation results like occlusion and reflection.
             phonon_dsp
