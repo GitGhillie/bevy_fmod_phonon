@@ -250,22 +250,23 @@ fn register_phonon_sources(
 pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
     if let Ok(channel_group) = instance.get_channel_group() {
         // 0 is the DSP all the way on the right on the master track
-        return Some(channel_group.get_dsp(0).unwrap());
-
-        // for index_group in 0..num_groups {
-        //     let group = channel_group.get_group(index_group).unwrap();
-        //     let group_num_dsp = group.get_num_ds_ps().unwrap();
-        //
-        //     for index_dsp in 0..group_num_dsp {
-        //         let dsp = group.get_dsp(index_dsp).unwrap();
-        //         let dsp_info = dsp.get_info().unwrap(); // this line seems to cause issues when Steam Audio is configured for reflection simulations??
-        //
-        //         if dsp_info.0 == "Steam Audio Spatializer" {
-        //             println!("index group {} index dsp {}", index_group, index_dsp);
-        //             return Some(dsp);
-        //         }
-        //     }
-        // }
+        //return Some(channel_group.get_dsp(0).unwrap());
+        
+        let num_groups = channel_group.get_num_groups().unwrap();
+        for index_group in 0..num_groups {
+            let group = channel_group.get_group(index_group).unwrap();
+            let group_num_dsp = group.get_num_ds_ps().unwrap();
+        
+            for index_dsp in 0..group_num_dsp {
+                let dsp = group.get_dsp(index_dsp).unwrap();
+                let dsp_info = dsp.get_info().unwrap(); // this line seems to cause issues when Steam Audio is configured for reflection simulations??
+        
+                if dsp_info.0 == "Steam Audio Spatializer" {
+                    println!("index group {} index dsp {}", index_group, index_dsp);
+                    return Some(dsp);
+                }
+            }
+        }
     }
 
     None
