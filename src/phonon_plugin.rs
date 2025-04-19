@@ -240,8 +240,6 @@ fn register_phonon_sources(
 /// The goal here is to find the Steam Audio Spatializer DSP associated with an instance.
 /// This way we can later set its parameters.
 /// The DSP can basically be anywhere in the DSP chain, so we have to search for it.
-/// (That's the idea, but see issue #3. Once that's fixed it should also be noted that
-/// the DSP can also be on the master track itself, which is channel_group).
 pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
     if let Ok(channel_group) = instance.get_channel_group() {
         // 0 is the DSP all the way on the right on the master track
@@ -254,7 +252,7 @@ pub fn get_phonon_spatializer(instance: EventInstance) -> Option<Dsp> {
         
             for index_dsp in 0..group_num_dsp {
                 let dsp = group.get_dsp(index_dsp).unwrap();
-                let dsp_info = dsp.get_info().unwrap(); // this line seems to cause issues when Steam Audio is configured for reflection simulations??
+                let dsp_info = dsp.get_info().unwrap();
         
                 if dsp_info.0 == "Steam Audio Spatializer" {
                     println!("index group {} index dsp {}", index_group, index_dsp);
