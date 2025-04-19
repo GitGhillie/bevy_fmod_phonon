@@ -4,10 +4,10 @@ use audionimbus::context::Context;
 use audionimbus::hrtf::Hrtf;
 use audionimbus::simulation::{Simulator, Source};
 use audionimbus::{
-    fmod, AirAbsorptionModel, AudioSettings, ContextSettings, CoordinateSystem,
-    DirectSimulationParameters, DirectSimulationSettings, Directivity, DistanceAttenuationModel,
-    Occlusion, OcclusionAlgorithm, SceneParams, SceneSettings, SimulationFlags, SimulationInputs,
-    SimulationSettings, SimulationSharedInputs, SourceSettings,
+    AirAbsorptionModel, AudioSettings, ContextSettings, CoordinateSystem,
+    DirectSimulationParameters, DirectSimulationSettings, DistanceAttenuationModel, Occlusion,
+    OcclusionAlgorithm, SceneParams, SceneSettings, SimulationFlags, SimulationInputs,
+    SimulationSettings, SimulationSharedInputs, SourceSettings, fmod,
 };
 use bevy::prelude::*;
 use bevy_fmod::prelude::AudioListener;

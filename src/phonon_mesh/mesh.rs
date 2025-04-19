@@ -5,7 +5,7 @@ use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 pub struct AudioMesh {
     pub vertices: Vec<[f32; 3]>,
     pub triangles: Vec<[u32; 3]>,
-    pub materials: Vec<audionimbus::scene::Material>,
+    pub materials: Vec<audionimbus::Material>,
     pub material_indices: Vec<u32>,
 }
 

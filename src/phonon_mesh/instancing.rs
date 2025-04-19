@@ -65,7 +65,7 @@ fn create_instanced_mesh_internal(
         if let Some(mesh) = meshes.get(&*mesh_handle) {
             let audio_mesh: AudioMesh = mesh::try_from(mesh, material).unwrap();
 
-            // Create sub scene with static mesh, this will later be used to create the instanced mesh
+            // Create a sub-scene with static mesh, this will later be used to create the instanced mesh
             let mut sub_scene =
                 audionimbus::Scene::try_new(&simulator.context, &SceneSettings::Default).unwrap();
 
