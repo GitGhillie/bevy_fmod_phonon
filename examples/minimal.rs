@@ -6,7 +6,6 @@
 //! Use WASD, Space, Shift and the mouse to move around.
 
 use bevy::prelude::*;
-use bevy::time::common_conditions::on_timer;
 use bevy::window::PresentMode;
 use bevy_fmod::prelude::AudioSource;
 use bevy_fmod::prelude::*;
@@ -16,9 +15,6 @@ use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
 };
 use std::f32::consts::PI;
-use std::time::Duration;
-
-use iyes_perf_ui::prelude::*;
 
 #[derive(Component)]
 struct TorusMarker;
@@ -45,10 +41,6 @@ fn main() {
         ))
         .add_plugins(LookTransformPlugin)
         .add_plugins(FpsCameraPlugin::default())
-        .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
-        .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
-        .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
-        .add_plugins(PerfUiPlugin)
         .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
         //.add_systems(Update, move_object)
@@ -67,7 +59,7 @@ fn setup_scene(
 ) {
     // Cubes
     let mesh = meshes.add(Cuboid::from_size(Vec3::splat(0.3)));
-    let material = materials.add(Color::rgb(0.8, 0.7, 0.6));
+    let material = materials.add(Color::srgb(0.8, 0.7, 0.6));
 
     //28 -> 22k
     let cube_num = 1;
@@ -132,7 +124,7 @@ fn setup_scene(
         .spawn(SpatialAudioBundle::new(event_description))
         .insert((
             Mesh3d(meshes.add(Cuboid::default())),
-            MeshMaterial3d(materials.add(Color::rgb(0.8, 0.2, 0.2))),
+            MeshMaterial3d(materials.add(Color::srgb(0.8, 0.2, 0.2))),
             Transform::from_xyz(0.0, 0.5, 1.5).with_scale(Vec3::splat(0.05)),
         ));
 
@@ -156,7 +148,7 @@ fn move_object(mut obj_query: Query<&mut Transform, With<TorusMarker>>, time: Re
 
 fn play_music(mut audio_sources: Query<&AudioSource>) {
     for audio_source in audio_sources.iter_mut() {
-        audio_source.play();
+        audio_source.start().unwrap();
     }
 }
 
@@ -166,6 +158,6 @@ fn remove_source(
 ) {
     for (ent, audio_source) in audio_sources.iter() {
         audio_source.stop(StopMode::AllowFadeout).unwrap();
-        commands.entity(ent).despawn_recursive();
+        commands.entity(ent).despawn();
     }
 }
