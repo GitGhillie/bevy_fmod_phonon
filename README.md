@@ -1,3 +1,5 @@
+Currently unmaintained, working on https://github.com/GitGhillie/phonon_rs instead.
+
 # bevy_fmod_phonon
 
 ## Experimental warning:
