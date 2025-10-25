@@ -2,20 +2,19 @@
 name = "bevy_fmod_phonon"
 description = "Bevy integration for the Steam Audio FMOD plugin."
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/GitGhillie/bevy_fmod_phonon"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bevy = { version = "0.13", default-features = false }
-steamaudio = { git = "https://github.com/GitGhillie/steamaudio.git", branch = "merged", features = ["fmod"] }
-bevy_fmod = { git = "https://github.com/Salzian/bevy_fmod.git", branch = "main" }
-libfmod = "~2.206.2" # todo check if we can get rid of this dependency
+bevy = { version = "0.16", default-features = false, features = ["bevy_asset", "bevy_render"] }
+audionimbus = { version = "0.6", features = ["fmod"] }
+bevy_fmod = { version = "0.8" }
+libfmod = "~2.222.6" # todo check if we can get rid of this dependency
 
 [dev-dependencies]
-bevy = { version = "0.13", default-features = true }
-smooth-bevy-cameras = "0.11" # todo remove
-iyes_perf_ui = "0.2" # todo remove
+bevy = { version = "0.16", default-features = true }
+smooth-bevy-cameras = "0.14" # todo remove
 
 [[example]]
 name = "minimal"

@@ -3,8 +3,9 @@ pub(crate) mod material;
 mod mesh;
 
 use crate::phonon_mesh::instancing::MeshParam;
+use crate::phonon_plugin::SteamSimulation;
+use audionimbus::InstancedMesh;
 use bevy::prelude::*;
-use steamaudio::scene::InstancedMesh;
 
 #[derive(Component, Default)]
 pub struct NeedsAudioMesh(pub material::PhononMaterial);
@@ -17,15 +18,15 @@ pub(crate) struct PhononMesh(InstancedMesh);
 pub(crate) fn register_audio_meshes(
     mut commands: Commands,
     mut mesh_param: MeshParam,
-    mut object_query: Query<(Entity, &Handle<Mesh>, &NeedsAudioMesh)>,
+    mut object_query: Query<(Entity, &Mesh3d, &NeedsAudioMesh)>,
 ) {
     for (ent, mesh_handle, requested_material) in &mut object_query {
-        let mut instanced_mesh = mesh_param
+        let instanced_mesh = mesh_param
             .create_instanced_mesh(mesh_handle, &requested_material.0)
             .unwrap();
-        instanced_mesh.set_visible(true);
+        mesh_param.simulator.scene.add_instanced_mesh(&instanced_mesh);
 
-        let scene_root = &mesh_param.simulator.scene;
+        let scene_root = &mut mesh_param.simulator.scene;
         scene_root.commit();
 
         commands.entity(ent).insert(PhononMesh(instanced_mesh));
@@ -36,9 +37,16 @@ pub(crate) fn register_audio_meshes(
 //Changed<GlobalTransform> or Changed Mesh? not worth it probably
 pub(crate) fn update_audio_mesh_transforms(
     mut object_query: Query<(&GlobalTransform, &mut PhononMesh)>,
+    simulation: ResMut<SteamSimulation>,
 ) {
     for (transform, mut audio_instance) in &mut object_query {
         let instanced_mesh = &mut audio_instance.0;
-        instanced_mesh.set_transform(transform.compute_matrix());
+        let scene_root = &simulation.scene;
+        // todo check if transpose is correct
+        let tf_matrix = transform.compute_matrix().transpose();
+        instanced_mesh.update_transform(
+            scene_root,
+            &audionimbus::Matrix::new(tf_matrix.to_cols_array_2d()),
+        );
     }
 }

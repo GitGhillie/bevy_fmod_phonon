@@ -6,19 +6,15 @@
 //! Use WASD, Space, Shift and the mouse to move around.
 
 use bevy::prelude::*;
-use bevy::time::common_conditions::on_timer;
 use bevy::window::PresentMode;
 use bevy_fmod::prelude::AudioSource;
 use bevy_fmod::prelude::*;
 use bevy_fmod_phonon::prelude::*;
 use smooth_bevy_cameras::{
-    controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
     LookTransformPlugin,
+    controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
 };
 use std::f32::consts::PI;
-use std::time::Duration;
-
-use iyes_perf_ui::prelude::*;
 
 #[derive(Component)]
 struct TorusMarker;
@@ -35,20 +31,16 @@ fn main() {
             }),
             FmodPlugin {
                 audio_banks_paths: &[
-                    "./assets/audio/demo_project/Build/Desktop/Master.bank",
-                    "./assets/audio/demo_project/Build/Desktop/Master.strings.bank",
-                    "./assets/audio/demo_project/Build/Desktop/Music.bank",
+                    "./assets/demo_project/Build/Desktop/Master.bank",
+                    "./assets/demo_project/Build/Desktop/Master.strings.bank",
+                    "./assets/demo_project/Build/Desktop/Music.bank",
                 ],
-                plugin_paths: Some(&["./phonon_fmod.dll"]),
+                plugin_paths: Some(&["./libphonon_fmod.so"]),
             },
             PhononPlugin,
         ))
         .add_plugins(LookTransformPlugin)
         .add_plugins(FpsCameraPlugin::default())
-        .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
-        .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
-        .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
-        .add_plugins(PerfUiPlugin)
         .add_systems(Startup, setup_scene)
         .add_systems(PostStartup, play_music)
         //.add_systems(Update, move_object)
@@ -65,11 +57,9 @@ fn setup_scene(
     mut materials: ResMut<Assets<StandardMaterial>>,
     studio: Res<FmodStudio>,
 ) {
-    commands.spawn(PerfUiCompleteBundle::default());
-
     // Cubes
     let mesh = meshes.add(Cuboid::from_size(Vec3::splat(0.3)));
-    let material = materials.add(Color::rgb(0.8, 0.7, 0.6));
+    let material = materials.add(Color::srgb(0.8, 0.7, 0.6));
 
     //28 -> 22k
     let cube_num = 1;
@@ -78,13 +68,10 @@ fn setup_scene(
         for y in 0..cube_num {
             for z in 0..cube_num {
                 commands.spawn((
-                    PbrBundle {
-                        mesh: mesh.clone(),
-                        material: material.clone(),
-                        transform: Transform::from_rotation(Quat::from_rotation_x(PI * 0.5))
-                            .with_translation(Vec3::new(x as f32, y as f32, z as f32)),
-                        ..default()
-                    },
+                    Mesh3d(mesh.clone()),
+                    MeshMaterial3d(material.clone()),
+                    Transform::from_rotation(Quat::from_rotation_x(PI * 0.5))
+                        .with_translation(Vec3::new(x as f32, y as f32, z as f32)),
                     NeedsAudioMesh(materials::BRICK),
                     TorusMarker,
                 ));
@@ -93,40 +80,36 @@ fn setup_scene(
     }
 
     commands.spawn((
-        PbrBundle {
-            mesh: meshes.add(Cuboid::from_size(Vec3::splat(10.0))),
-            material: material.clone(),
-            transform: Transform::from_rotation(Quat::from_rotation_x(PI * 0.5))
-                .with_translation(Vec3::new(7.0, 0.0, 0.0)),
-            ..default()
-        },
+        Mesh3d(meshes.add(Cuboid::from_size(Vec3::splat(10.0)))),
+        MeshMaterial3d(material.clone()),
+        Transform::from_rotation(Quat::from_rotation_x(PI * 0.5))
+            .with_translation(Vec3::new(7.0, 0.0, 0.0)),
         NeedsAudioMesh(materials::METAL),
         TorusMarker,
     ));
 
     // Light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+    commands.spawn((
+        PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
+        Transform::from_xyz(4.0, 8.0, 4.0),
+    ));
 
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
+    commands.spawn((
+        PointLight {
             intensity: 1500.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(-5.0, 4.0, -3.0),
-        ..default()
-    });
+        Transform::from_xyz(-5.0, 4.0, -3.0),
+    ));
+
     // Camera
     commands
-        .spawn(Camera3dBundle::default())
+        .spawn(Camera3d::default())
         .insert(SpatialListenerBundle::default())
         .insert(FpsCameraBundle::new(
             FpsCameraController::default(),
@@ -139,12 +122,11 @@ fn setup_scene(
 
     commands
         .spawn(SpatialAudioBundle::new(event_description))
-        .insert(PbrBundle {
-            mesh: meshes.add(Cuboid::default()),
-            material: materials.add(Color::rgb(0.8, 0.2, 0.2)),
-            transform: Transform::from_xyz(0.0, 0.5, 1.5).with_scale(Vec3::splat(0.05)),
-            ..default()
-        });
+        .insert((
+            Mesh3d(meshes.add(Cuboid::default())),
+            MeshMaterial3d(materials.add(Color::srgb(0.8, 0.2, 0.2))),
+            Transform::from_xyz(0.0, 0.5, 1.5).with_scale(Vec3::splat(0.05)),
+        ));
 
     // commands
     //     .spawn(SpatialAudioBundle::new(event_description))
@@ -157,7 +139,7 @@ fn setup_scene(
 }
 
 fn move_object(mut obj_query: Query<&mut Transform, With<TorusMarker>>, time: Res<Time>) {
-    let sin = time.elapsed_seconds().sin() * 0.01;
+    let sin = time.elapsed_secs().sin() * 0.01;
 
     for mut transform in &mut obj_query {
         transform.translation.y += sin;
@@ -166,7 +148,7 @@ fn move_object(mut obj_query: Query<&mut Transform, With<TorusMarker>>, time: Re
 
 fn play_music(mut audio_sources: Query<&AudioSource>) {
     for audio_source in audio_sources.iter_mut() {
-        audio_source.play();
+        audio_source.start().unwrap();
     }
 }
 
@@ -175,7 +157,7 @@ fn remove_source(
     audio_sources: Query<(Entity, &AudioSource), With<AudioSource>>,
 ) {
     for (ent, audio_source) in audio_sources.iter() {
-        audio_source.stop();
-        commands.entity(ent).despawn_recursive();
+        audio_source.stop(StopMode::AllowFadeout).unwrap();
+        commands.entity(ent).despawn();
     }
 }

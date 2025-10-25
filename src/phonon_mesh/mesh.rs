@@ -5,7 +5,7 @@ use bevy::render::mesh::{Indices, PrimitiveTopology, VertexAttributeValues};
 pub struct AudioMesh {
     pub vertices: Vec<[f32; 3]>,
     pub triangles: Vec<[u32; 3]>,
-    pub materials: Vec<steamaudio::scene::Material>,
+    pub materials: Vec<audionimbus::Material>,
     pub material_indices: Vec<u32>,
 }
 
@@ -59,7 +59,7 @@ pub fn try_from(mesh: &Mesh, material: &PhononMaterial) -> Result<AudioMesh, Aud
         _ => return Err(AudioMeshError::NoVertices),
     };
 
-    let material: steamaudio::scene::Material = material.into();
+    let material: audionimbus::Material = material.into();
     let materials = vec![material];
     let material_indices = triangles.iter().map(|_| 0 /* GENERIC index */).collect();
 
